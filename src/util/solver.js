@@ -229,7 +229,7 @@ function solve_numbers(numbers, target, trickshot) {
 }
 // rlemon
 export default function solve(numbers, target) {
-    const serialised_result = solve_numbers(numbers, target, Math.random() > 0.5);
+    const serialised_result = solve_numbers(numbers, target);
     const pretty = stringify_result(serialised_result);
     return pretty;
 }

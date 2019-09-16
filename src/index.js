@@ -34,12 +34,4 @@ function parseMessage( message ) {
             }
         }
     }
-
-
-    // for( const [commandName, command] of Object.entries(commands) ) {
-    //     const matches = message.content.match(command.trigger);
-    //     if( matches ) {
-    //         command.runMatches(matches, message, storage);
-    //     }
-    // }
 }
