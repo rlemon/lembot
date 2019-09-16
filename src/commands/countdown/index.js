@@ -79,7 +79,7 @@ function endGame(message, storage, early = false) {
 function beginNewRound(message, storage) {
     const gameState = storage.get('countdown_gameState');
     gameState.answer = generateAnswer();
-    gameState.numbers = generateNumbers(gameState.big, 6 - Number(gameState.big));
+    gameState.numbers = generateNumbers(gameState.big, 6 - gameState.big);
     gameState.solution = solver(gameState.numbers, gameState.answer);
     gameState.roundTimer = setTimeout(endRound, gameState.timeout * 60000, message, storage);
     message.channel.send(`Round ${gameState.currentRound} of ${gameState.rounds} beginning.\nAnswer:${gameState.answer}\nNumbers:${gameState.numbers}\ntime for round: ${gameState.timeout} minutes`);
@@ -118,7 +118,7 @@ export const start = {
             Number(rounds) < 1 || 
             Number(rounds) > 10 
         ) {
-            return; // why am I like this?
+            return; // cleanup this mess
         }
         const gameState = {
             running: true, 
