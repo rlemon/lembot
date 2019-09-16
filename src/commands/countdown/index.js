@@ -14,19 +14,25 @@ function generateNumbers(big, small) {
 function testAnswer(userInput, numbers, answer) {
     const userNumbers = userInput.match(/(\d+)/g);
     if (!userNumbers || userNumbers.length > 6) {
-        return [false,null];
+        return [false, null];
     }
     if (!userNumbers.every(num => numbers.includes(Number(num)))) {
-        return [false,null];
+        return [false, null];
     }
     if (userInput === answer) {
-        return [false,null];
+        return [false, null];
     }
-    const userAnswer = evaluate(userInput);
-    if (userAnswer === answer) {
-        return [true, userAnswer];
+    try {
+        const userAnswer = evaluate(userInput);
+        if (userAnswer === answer) {
+            return [true, userAnswer];
+        }
+        return [false, userAnswer];
+    } catch ( error ) {
+        console.error( error );
+        return [false, null];
     }
-    return [false,userAnswer];
+    return [false, null];
 }
 
 function endRound(message, storage, playerIndex = false) {
@@ -34,23 +40,17 @@ function endRound(message, storage, playerIndex = false) {
     clearTimeout(gameState.roundTimer);
     gameState.roundTimer = null;
     gameState.reminderTimers = gameState.reminderTimers.map(clearTimeout);
-    // this is wrong
     let scorecard = playerIndex !== false ? `<@${gameState.participants[playerIndex].id}> is the winner!\n` : '';
-    const scores = gameState.participants.map(player => {
-        const diff = player.closest > gameState.answer ? gameState.answer / player.closest : player.closest / gameState.answer;
-        return [player, diff];
-    }).sort((a, b) => {
-        return a[1] > b[1] ? 1 : -1;
-    }).map(([player, diff], index) => {
-        player.score = Math.max(0, Math.floor(10 * diff - index));
-        return player;
+    gameState.participants.forEach(player => player.diff = Math.abs(1 - player.closest / gameState.answer ) );
+    gameState.participants.sort( (a,b) => a.diff < b.diff ? 1 : -1 );
+    gameState.participants.forEach((player,index) => {
+        const score = Math.max(0, Math.floor(10 - (15 * player.diff) - ( player.diff !== 0 )));
+        player.score += score;
+        scorecard += `<@${player.id}> has gained ${score} points, for a total of ${player.score} points\n`;
+        delete player.diff; // I don't know why I'm putting this in, but I am.
     });
-    for (const player of scores) {
-        const total = gameState.participants.find(({ id }) => id === player.id).score += player.score;
-        scorecard += `<@${player.id}> has gained ${player.score} points, for a total of ${total} points`;
-    }
     message.channel.send(scorecard);
-    // end of wrongness
+    
     message.channel.send(`Round ${gameState.currentRound} has ended. possible solution follows:\n${gameState.solution}`);
 
     gameState.currentRound += 1;
@@ -110,6 +110,10 @@ function generateReminders(message, storage) {
 export const start = {
     trigger: /^play countdown (\d+)(\sbig)?\s?(\d+)?(\s?min)?\s?(\d+)?(\srounds?)?$/,
     runMatches: (matches,message,storage) => {
+        const { running = false } = storage.get('countdown_gameState') || {};
+        if( running ) {
+            return;
+        }
         const [input, big=0, strBig, min=4, strMin, rounds=1, strRounds] = matches;
         if ( 
             Number(rounds) <= 0 || 
@@ -169,6 +173,10 @@ export const guess = {
 export const stop = {
     trigger: /^stop game$/,
     runMatches: ( matches, message, storage) => {
+        const { running = false } = storage.get('countdown_gameState') || {};
+        if (!running) {
+            return;
+        }
         message.channel.send('Stopping game. goodbye');
         return endGame(message, storage, true);
     }
