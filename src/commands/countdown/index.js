@@ -122,6 +122,7 @@ export const start = {
             Number(rounds) < 1 || 
             Number(rounds) > 10 
         ) {
+            message.channel.send('invalid game criteria');
             return; // cleanup this mess
         }
         const gameState = {
